@@ -20,6 +20,7 @@
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="SequenceFlow_0d726xt" sourceRef="RegisterUser" targetRef="EndEvent_1y4bj2w" />
     <bpmn:serviceTask id="RegisterUser" name="Register User" camunda:delegateExpression="${registerUserService}">
+      <bpmn:extensionElements />
       <bpmn:incoming>SequenceFlow_14bdz4q</bpmn:incoming>
       <bpmn:outgoing>SequenceFlow_0d726xt</bpmn:outgoing>
     </bpmn:serviceTask>
