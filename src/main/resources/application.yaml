@@ -1,7 +1,6 @@
-spring.datasource.url: jdbc:h2:file:./camunda-h2-database
+zeebe.client.broker.gateway-address: 127.0.0.1:26500
 
-camunda.bpm.admin-user:
-  id: demo
-  password: demo
+zeebe.client.security.plaintext: true
 
-rest.request.url: http://localhost:8888/users
+rest.request.url: http://localhost:8888
+
