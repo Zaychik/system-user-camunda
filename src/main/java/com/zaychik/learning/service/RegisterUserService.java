@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
@@ -73,14 +74,23 @@ public class RegisterUserService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(job.getVariablesAsMap().get("token").toString());
-        UserDto userDto = restTemplate.exchange(
-                RequestEntity.get(new URI(restRequestUrl + "/users/" + job.getVariablesAsMap().get("id").toString()))
-                        .headers(headers)
-                        .build(), UserDto.class)
-                .getBody();
-        Map<String, String> variables  = new HashMap<String, String>(){{
-            put("isUserExist", "true");
-        }};
+        Map<String, String> variables;
+        try {
+            UserDto userDto = restTemplate.exchange(
+                            RequestEntity.get(new URI(restRequestUrl + "/users/" + job.getVariablesAsMap().get("id").toString()))
+                                    .headers(headers)
+                                    .build(), UserDto.class)
+                    .getBody();
+            variables  = new HashMap<String, String>(){{
+                put("isUserExist", "true");
+            }};
+        } catch (HttpClientErrorException.NotFound e){
+            variables  = new HashMap<String, String>(){{
+                put("isUserExist", "false");
+            }};
+        };
+
+
 
         client.newCompleteCommand(job.getKey())
                 .variables(variables)
