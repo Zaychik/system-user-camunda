@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zaychik.learning.model.UserDto;
 import com.zaychik.learning.model.auth.AuthenticationRequest;
 import com.zaychik.learning.model.auth.AuthenticationResponce;
+import com.zaychik.learning.model.auth.RegisterRequest;
 import io.camunda.zeebe.client.api.response.ActivatedJob;
 import io.camunda.zeebe.client.api.worker.JobClient;
 import io.camunda.zeebe.spring.client.EnableZeebeClient;
@@ -16,7 +17,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-
+import com.google.gson.Gson;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
@@ -89,9 +90,6 @@ public class RegisterUserService {
                 put("isUserExist", "false");
             }};
         };
-
-
-
         client.newCompleteCommand(job.getKey())
                 .variables(variables)
                 .send()
@@ -99,16 +97,45 @@ public class RegisterUserService {
     }
 
     @ZeebeWorker(type = "updateUser")
-    public void updateUser(final JobClient client, final ActivatedJob job)  {
+    public void updateUser(final JobClient client, final ActivatedJob job) throws URISyntaxException {
         logJob(job);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(job.getVariablesAsMap().get("token").toString());
+
+        Gson gson = new Gson();
+        UserDto user = gson.fromJson(job.getVariablesAsMap().toString(), UserDto.class);
+
+        restTemplate.exchange(
+                        RequestEntity.put(new URI(restRequestUrl + "/users/" + job.getVariablesAsMap().get("id").toString()))
+                                .headers(headers)
+                                .body(user),
+                        UserDto.class)
+                .getBody();
+
         client.newCompleteCommand(job.getKey())
                 .send()
                 .join();
     }
 
     @ZeebeWorker(type = "registerUser")
-    public void registerUser(final JobClient client, final ActivatedJob job)  {
+    public void registerUser(final JobClient client, final ActivatedJob job) throws URISyntaxException {
         logJob(job);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(job.getVariablesAsMap().get("token").toString());
+
+        Gson gson = new Gson();
+        RegisterRequest user = gson.fromJson(job.getVariablesAsMap().toString(), RegisterRequest.class);
+
+        restTemplate.exchange(
+                        RequestEntity.post(new URI(restRequestUrl + "/api/v1/auth/register"))
+                                .headers(headers)
+                                .body(user),
+                        UserDto.class)
+                .getBody();
+
         client.newCompleteCommand(job.getKey())
                 .send()
                 .join();
