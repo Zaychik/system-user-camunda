@@ -69,7 +69,7 @@ public class RegisterUserService {
         if (job.getVariablesAsMap().get("token") == null){
             client.newFailCommand(job.getKey()).retries(0).send();
         }
-        if (job.getVariablesAsMap().get("id") == null){
+        if (job.getVariablesAsMap().get("email") == null){
             client.newFailCommand(job.getKey()).retries(0).send();
         }
         HttpHeaders headers = new HttpHeaders();
@@ -78,7 +78,7 @@ public class RegisterUserService {
         Map<String, String> variables;
         try {
             UserDto userDto = restTemplate.exchange(
-                            RequestEntity.get(new URI(restRequestUrl + "/users/" + job.getVariablesAsMap().get("id").toString()))
+                            RequestEntity.get(new URI(restRequestUrl + "/users/email?email=" + job.getVariablesAsMap().get("email").toString()))
                                     .headers(headers)
                                     .build(), UserDto.class)
                     .getBody();
@@ -107,7 +107,7 @@ public class RegisterUserService {
         UserDto user = gson.fromJson(job.getVariablesAsMap().toString(), UserDto.class);
 
         restTemplate.exchange(
-                        RequestEntity.put(new URI(restRequestUrl + "/users/" + job.getVariablesAsMap().get("id").toString()))
+                        RequestEntity.put(new URI(restRequestUrl + "/users/email?email=" + job.getVariablesAsMap().get("email").toString()))
                                 .headers(headers)
                                 .body(user),
                         UserDto.class)
