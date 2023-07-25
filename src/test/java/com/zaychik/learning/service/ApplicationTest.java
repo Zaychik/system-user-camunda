@@ -26,12 +26,7 @@ import java.util.concurrent.TimeoutException;
 //@SpringBootTest
 //@ZeebeSpringTest
 public class ApplicationTest {
-    @Mock
-    private RegisterUserService service;
-    @Mock
-    RestTemplate restTemplate;
     final private String NAME_BPMN = "new-bpmn-diagram.bpmn";
-    Map<String, Object> variables;
     private ZeebeTestEngine engine;
     private ZeebeClient client;
     private RecordStream recordStream;
@@ -105,7 +100,7 @@ public class ApplicationTest {
     @Test
     public void testUpdateOfInstance() throws InterruptedException, TimeoutException, JsonProcessingException, URISyntaxException {
 
-        Map<String, String>  ariables  = new HashMap<String, String>(){{
+        Map<String, String>  variables  = new HashMap<String, String>(){{
             put("isUserExist", "true");
         }};
 
@@ -131,7 +126,7 @@ public class ApplicationTest {
                 .join();
 
         activatedJob = responseGet.getJobs().get(0);
-        client.newCompleteCommand(activatedJob.getKey()).variables(ariables).send().join();
+        client.newCompleteCommand(activatedJob.getKey()).variables(variables).send().join();
 
         ActivateJobsResponse responseUpdate = client.newActivateJobsCommand()
                 .jobType("updateUser")
@@ -157,7 +152,7 @@ public class ApplicationTest {
     @Test
     public void testRegisterOfInstance() throws InterruptedException, TimeoutException {
 
-        Map<String, String>  ariables  = new HashMap<String, String>(){{
+        Map<String, String>  variables  = new HashMap<String, String>(){{
             put("isUserExist", "false");
         }};
 
@@ -183,7 +178,7 @@ public class ApplicationTest {
                 .join();
 
         activatedJob = responseGet.getJobs().get(0);
-        client.newCompleteCommand(activatedJob.getKey()).variables(ariables).send().join();
+        client.newCompleteCommand(activatedJob.getKey()).variables(variables).send().join();
 
         ActivateJobsResponse responseUpdate = client.newActivateJobsCommand()
                 .jobType("registerUser")
