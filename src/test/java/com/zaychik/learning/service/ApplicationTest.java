@@ -1,31 +1,35 @@
 package com.zaychik.learning.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.camunda.zeebe.client.ZeebeClient;
-import io.camunda.zeebe.client.api.response.*;
+import io.camunda.zeebe.client.api.response.ActivateJobsResponse;
+import io.camunda.zeebe.client.api.response.ActivatedJob;
+import io.camunda.zeebe.client.api.response.DeploymentEvent;
+import io.camunda.zeebe.client.api.response.ProcessInstanceEvent;
 import io.camunda.zeebe.process.test.api.ZeebeTestEngine;
 import io.camunda.zeebe.process.test.assertions.BpmnAssert;
-import io.camunda.zeebe.process.test.assertions.DeploymentAssert;
 import io.camunda.zeebe.process.test.assertions.ProcessInstanceAssert;
 import io.camunda.zeebe.process.test.extension.ZeebeProcessTest;
 import io.camunda.zeebe.process.test.filters.RecordStream;
-import io.camunda.zeebe.spring.test.ZeebeSpringTest;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.mockito.Mock;
+import org.springframework.web.client.RestTemplate;
 
+import java.net.URISyntaxException;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-
-import static io.camunda.zeebe.spring.test.ZeebeTestThreadSupport.waitForProcessInstanceCompleted;
+import java.util.concurrent.TimeoutException;
 
 
 @ZeebeProcessTest
 //@SpringBootTest
 //@ZeebeSpringTest
 public class ApplicationTest {
-    @MockBean
+    @Mock
     private RegisterUserService service;
+    @Mock
+    RestTemplate restTemplate;
     final private String NAME_BPMN = "new-bpmn-diagram.bpmn";
     Map<String, Object> variables;
     private ZeebeTestEngine engine;
@@ -83,7 +87,7 @@ public class ApplicationTest {
     public void testJobAssertion() throws Exception {
         //Given
         String bpmnProcessId = initDeployment(NAME_BPMN);
-        initProcessInstanceStart(bpmnProcessId);
+        ProcessInstanceAssert instanceAssert = initProcessInstanceStart(bpmnProcessId);
         //When
         ActivateJobsResponse response = client.newActivateJobsCommand()
                 .jobType("authUser")
@@ -98,6 +102,110 @@ public class ApplicationTest {
         client.newCompleteCommand(activatedJob.getKey()).send().join();
     }
 
+    @Test
+    public void testUpdateOfInstance() throws InterruptedException, TimeoutException, JsonProcessingException, URISyntaxException {
+
+        Map<String, String>  ariables  = new HashMap<String, String>(){{
+            put("isUserExist", "true");
+        }};
+
+        String bpmnProcessId = initDeployment(NAME_BPMN);
+        ProcessInstanceAssert instanceAssert = initProcessInstanceStart(bpmnProcessId);
+
+        ActivatedJob activatedJob = null;
+
+        ActivateJobsResponse responseAuth = client.newActivateJobsCommand()
+                .jobType("authUser")
+                .maxJobsToActivate(1)
+                .send()
+                .join();
+
+
+        activatedJob = responseAuth.getJobs().get(0);
+        client.newCompleteCommand(activatedJob.getKey()).send().join();
+
+        ActivateJobsResponse responseGet = client.newActivateJobsCommand()
+                .jobType("getUser")
+                .maxJobsToActivate(1)
+                .send()
+                .join();
+
+        activatedJob = responseGet.getJobs().get(0);
+        client.newCompleteCommand(activatedJob.getKey()).variables(ariables).send().join();
+
+        ActivateJobsResponse responseUpdate = client.newActivateJobsCommand()
+                .jobType("updateUser")
+                .maxJobsToActivate(1)
+                .send()
+                .join();
+
+        activatedJob = responseUpdate.getJobs().get(0);
+
+
+        client.newCompleteCommand(activatedJob.getKey()).send().join();
+
+        engine.waitForIdleState(Duration.ofSeconds(5));
+
+        instanceAssert
+                .hasPassedElement("get")
+                .hasPassedElement("update")
+                .hasNotPassedElement("register")
+                .isCompleted();
+
+    }
+
+    @Test
+    public void testRegisterOfInstance() throws InterruptedException, TimeoutException {
+
+        Map<String, String>  ariables  = new HashMap<String, String>(){{
+            put("isUserExist", "false");
+        }};
+
+        String bpmnProcessId = initDeployment(NAME_BPMN);
+        ProcessInstanceAssert instanceAssert = initProcessInstanceStart(bpmnProcessId);
+
+        ActivatedJob activatedJob = null;
+
+        ActivateJobsResponse responseAuth = client.newActivateJobsCommand()
+                .jobType("authUser")
+                .maxJobsToActivate(1)
+                .send()
+                .join();
+
+
+        activatedJob = responseAuth.getJobs().get(0);
+        client.newCompleteCommand(activatedJob.getKey()).send().join();
+
+        ActivateJobsResponse responseGet = client.newActivateJobsCommand()
+                .jobType("getUser")
+                .maxJobsToActivate(1)
+                .send()
+                .join();
+
+        activatedJob = responseGet.getJobs().get(0);
+        client.newCompleteCommand(activatedJob.getKey()).variables(ariables).send().join();
+
+        ActivateJobsResponse responseUpdate = client.newActivateJobsCommand()
+                .jobType("registerUser")
+                .maxJobsToActivate(1)
+                .send()
+                .join();
+
+        activatedJob = responseUpdate.getJobs().get(0);
+
+
+        client.newCompleteCommand(activatedJob.getKey()).send().join();
+
+        engine.waitForIdleState(Duration.ofSeconds(5));
+
+        instanceAssert
+                .hasPassedElement("get")
+                .hasNotPassedElement("update")
+                .hasPassedElement("register")
+                .isCompleted();
+
+    }
+
     private ActivatedJob getActivatedJob(ActivateJobsResponse response) throws Exception {
         int duration = 1000;
         while(response.getJobs().size()<1) {
@@ -107,44 +215,5 @@ public class ApplicationTest {
                 throw new Exception("Job waiting period exceeded");
         }
         return response.getJobs().get(0);
-    }
-    @Test
-    void testRegisterUserService(){
-        variables = new HashMap<>();
-        variables.put("name", "User7");
-        variables.put("email", "user9@gmail.com");
-        variables.put("phone", "89036874010");
-        variables.put("role", "USER");
-        variables.put("password", "1234");
-        variables.put("authuser", "admin@gmail.com");
-        variables.put("authuserpassword", "1234");
-
-        DeploymentEvent event = client.newDeployResourceCommand()
-                .addResourceFromClasspath("new-bpmn-diagram.bpmn")
-                .send()
-                .join();
-        DeploymentAssert assertions = BpmnAssert.assertThat(event);
-
-        ProcessInstanceEvent processInstance = client.newCreateInstanceCommand()
-                .bpmnProcessId(event.getProcesses().get(0).getBpmnProcessId())
-                .latestVersion()
-                .send()
-                .join();
-
-        /*ProcessInstanceResult event2 = client.newCreateInstanceCommand()
-                .bpmnProcessId(event.getProcesses().get(0).getBpmnProcessId())
-                .latestVersion()
-                .withResult()
-                .send()
-                .join();*/
-
-        //ProcessInstanceAssert assertions2 = BpmnAssert.assertThat(processInstance);
-        waitForProcessInstanceCompleted(processInstance);
-        //waitForUserTaskAndComplete("auth", Collections.singletonMap("approved", true));
-
-        /*BpmnAssert.assertThat(processInstance)
-                .hasPassedElement("auth")
-                .isCompleted();*/
-
     }
 }
