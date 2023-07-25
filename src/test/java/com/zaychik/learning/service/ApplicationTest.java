@@ -98,7 +98,7 @@ public class ApplicationTest {
     }
 
     @Test
-    public void testUpdateOfInstance() throws InterruptedException, TimeoutException, JsonProcessingException, URISyntaxException {
+    public void testUpdateOfInstance() throws Exception {
 
         Map<String, String>  variables  = new HashMap<String, String>(){{
             put("isUserExist", "true");
@@ -116,7 +116,7 @@ public class ApplicationTest {
                 .join();
 
 
-        activatedJob = responseAuth.getJobs().get(0);
+        activatedJob = getActivatedJob(responseAuth);
         client.newCompleteCommand(activatedJob.getKey()).send().join();
 
         ActivateJobsResponse responseGet = client.newActivateJobsCommand()
@@ -134,7 +134,7 @@ public class ApplicationTest {
                 .send()
                 .join();
 
-        activatedJob = responseUpdate.getJobs().get(0);
+        activatedJob = getActivatedJob(responseUpdate);
 
 
         client.newCompleteCommand(activatedJob.getKey()).send().join();
@@ -150,7 +150,7 @@ public class ApplicationTest {
     }
 
     @Test
-    public void testRegisterOfInstance() throws InterruptedException, TimeoutException {
+    public void testRegisterOfInstance() throws Exception {
 
         Map<String, String>  variables  = new HashMap<String, String>(){{
             put("isUserExist", "false");
@@ -168,7 +168,7 @@ public class ApplicationTest {
                 .join();
 
 
-        activatedJob = responseAuth.getJobs().get(0);
+        activatedJob = getActivatedJob(responseAuth);
         client.newCompleteCommand(activatedJob.getKey()).send().join();
 
         ActivateJobsResponse responseGet = client.newActivateJobsCommand()
@@ -186,7 +186,7 @@ public class ApplicationTest {
                 .send()
                 .join();
 
-        activatedJob = responseUpdate.getJobs().get(0);
+        activatedJob = getActivatedJob(responseUpdate);
 
 
         client.newCompleteCommand(activatedJob.getKey()).send().join();
