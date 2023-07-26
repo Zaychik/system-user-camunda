@@ -48,6 +48,31 @@ public class ApplicationTest {
         return BpmnAssert.assertThat(event);
     }
 
+    private ActivatedJob getActivatedJob(ActivateJobsResponse response) throws Exception {
+        int duration = 1000;
+        while(response.getJobs().size()<1) {
+            Thread.sleep(duration);
+            duration+=1000;
+            if(duration == 10000)
+                throw new Exception("Job waiting period exceeded");
+        }
+        return response.getJobs().get(0);
+    }
+    private void ActivateJobCompleteCommand(String jobType, Map<String, String> variables) throws Exception {
+        ActivateJobsResponse responseGet = client.newActivateJobsCommand()
+                .jobType(jobType)
+                .maxJobsToActivate(1)
+                .send()
+                .join();
+
+        ActivatedJob activatedJob = getActivatedJob(responseGet);
+        if (variables != null && variables.size() > 0) {
+            client.newCompleteCommand(activatedJob.getKey()).variables(variables).send().join();
+        } else {
+            client.newCompleteCommand(activatedJob.getKey()).send().join();
+        }
+    }
+
     @Test
     public void testDeployment() {
         //When
@@ -107,37 +132,9 @@ public class ApplicationTest {
         String bpmnProcessId = initDeployment(NAME_BPMN);
         ProcessInstanceAssert instanceAssert = initProcessInstanceStart(bpmnProcessId);
 
-        ActivatedJob activatedJob = null;
-
-        ActivateJobsResponse responseAuth = client.newActivateJobsCommand()
-                .jobType("authUser")
-                .maxJobsToActivate(1)
-                .send()
-                .join();
-
-
-        activatedJob = getActivatedJob(responseAuth);
-        client.newCompleteCommand(activatedJob.getKey()).send().join();
-
-        ActivateJobsResponse responseGet = client.newActivateJobsCommand()
-                .jobType("getUser")
-                .maxJobsToActivate(1)
-                .send()
-                .join();
-
-        activatedJob = responseGet.getJobs().get(0);
-        client.newCompleteCommand(activatedJob.getKey()).variables(variables).send().join();
-
-        ActivateJobsResponse responseUpdate = client.newActivateJobsCommand()
-                .jobType("updateUser")
-                .maxJobsToActivate(1)
-                .send()
-                .join();
-
-        activatedJob = getActivatedJob(responseUpdate);
-
-
-        client.newCompleteCommand(activatedJob.getKey()).send().join();
+        ActivateJobCompleteCommand("authUser", null);
+        ActivateJobCompleteCommand("getUser", variables);
+        ActivateJobCompleteCommand("updateUser", null);
 
         engine.waitForIdleState(Duration.ofSeconds(5));
 
@@ -159,37 +156,9 @@ public class ApplicationTest {
         String bpmnProcessId = initDeployment(NAME_BPMN);
         ProcessInstanceAssert instanceAssert = initProcessInstanceStart(bpmnProcessId);
 
-        ActivatedJob activatedJob = null;
-
-        ActivateJobsResponse responseAuth = client.newActivateJobsCommand()
-                .jobType("authUser")
-                .maxJobsToActivate(1)
-                .send()
-                .join();
-
-
-        activatedJob = getActivatedJob(responseAuth);
-        client.newCompleteCommand(activatedJob.getKey()).send().join();
-
-        ActivateJobsResponse responseGet = client.newActivateJobsCommand()
-                .jobType("getUser")
-                .maxJobsToActivate(1)
-                .send()
-                .join();
-
-        activatedJob = responseGet.getJobs().get(0);
-        client.newCompleteCommand(activatedJob.getKey()).variables(variables).send().join();
-
-        ActivateJobsResponse responseUpdate = client.newActivateJobsCommand()
-                .jobType("registerUser")
-                .maxJobsToActivate(1)
-                .send()
-                .join();
-
-        activatedJob = getActivatedJob(responseUpdate);
-
-
-        client.newCompleteCommand(activatedJob.getKey()).send().join();
+        ActivateJobCompleteCommand("authUser", null);
+        ActivateJobCompleteCommand("getUser", variables);
+        ActivateJobCompleteCommand("registerUser", null);
 
         engine.waitForIdleState(Duration.ofSeconds(5));
 
@@ -201,14 +170,4 @@ public class ApplicationTest {
 
     }
 
-    private ActivatedJob getActivatedJob(ActivateJobsResponse response) throws Exception {
-        int duration = 1000;
-        while(response.getJobs().size()<1) {
-            Thread.sleep(duration);
-            duration+=1000;
-            if(duration == 10000)
-                throw new Exception("Job waiting period exceeded");
-        }
-        return response.getJobs().get(0);
-    }
 }
