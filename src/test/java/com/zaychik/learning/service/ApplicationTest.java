@@ -59,13 +59,13 @@ public class ApplicationTest {
         return response.getJobs().get(0);
     }
     private void ActivateJobCompleteCommand(String jobType, Map<String, String> variables) throws Exception {
-        ActivateJobsResponse responseGet = client.newActivateJobsCommand()
+        ActivateJobsResponse response = client.newActivateJobsCommand()
                 .jobType(jobType)
                 .maxJobsToActivate(1)
                 .send()
                 .join();
 
-        ActivatedJob activatedJob = getActivatedJob(responseGet);
+        ActivatedJob activatedJob = getActivatedJob(response);
         if (variables != null && variables.size() > 0) {
             client.newCompleteCommand(activatedJob.getKey()).variables(variables).send().join();
         } else {
