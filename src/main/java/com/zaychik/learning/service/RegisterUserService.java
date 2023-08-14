@@ -40,7 +40,14 @@ public class RegisterUserService {
 
     private static final String JOB_VAR_TOKEN = "token";
     private static final String JOB_VAR_EMAIL = "email";
-
+    /**
+     * Метод для блока Authentication.
+     * Метод получает через параметры логин (authuser) и пароль для авторизации (authuserpassword)
+     * Авторизируется в системе и записывает токен в параметры (JOB_VAR_TOKEN)
+     * @param client - JobClient
+     * @param job - ActivatedJob
+     * @throws  JsonProcessingException из-за преобразования обекта в  json
+     */
     @JobWorker(type = "authUser" )
     public void authUser(final JobClient client, final ActivatedJob job) throws JsonProcessingException {
         logJob(job);
@@ -67,7 +74,14 @@ public class RegisterUserService {
 
 
     }
-
+    /**
+     * Метод для блока Get User.
+     * Метод запрашивает пользователя по почте JOB_VAR_EMAIL.
+     * На основе его наличии в системе вставляет новый параметр isUserExist
+     * @param client - JobClient
+     * @param job - ActivatedJob
+     * @throws  URISyntaxException
+     */
     @JobWorker(type = "getUser")
     public void getUser(final JobClient client, final ActivatedJob job) throws URISyntaxException {
         logJob(job);
@@ -96,7 +110,14 @@ public class RegisterUserService {
                 .send()
                 .join();
     }
-
+    /**
+     * Метод для блока Update user.
+     * На основе параметра isUserExist, было принято решение, что пользователь существует!
+     * Обновляем пользотвателя на ту информацию, которая передана в параметрах.
+     * @param client - JobClient
+     * @param job - ActivatedJob
+     * @throws  URISyntaxException
+     */
     @JobWorker(type = "updateUser")
     public void updateUser(final JobClient client, final ActivatedJob job) throws URISyntaxException {
         logJob(job);
@@ -119,6 +140,14 @@ public class RegisterUserService {
                 .join();
     }
 
+    /**
+     * Метод для блока Update user.
+     * На основе параметра isUserExist, было принято решение, что пользователь НЕ существует!
+     * Регистрируем пользователя с той информацией, которая передана в параметрах
+     * @param client - JobClient
+     * @param job - ActivatedJob
+     * @throws  URISyntaxException
+     */
     @JobWorker(type = "registerUser")
     public void registerUser(final JobClient client, final ActivatedJob job) throws URISyntaxException {
         logJob(job);
@@ -141,7 +170,12 @@ public class RegisterUserService {
                 .send()
                 .join();
     }
-
+    /**
+     * Метод для вывода всей информации о работе, которая сейчас выполняется.
+     * И с какими параметрами она емеет на вход.
+     * @param job - ActivatedJob
+     * @throws  URISyntaxException
+     */
     private static void logJob(final ActivatedJob job) {
         log.info(
                 "complete job\n>>> [type: {}, key: {}, element: {}, workflow instance: {}]\n{deadline; {}]\n[headers: {}]\n[variables: {}]",
