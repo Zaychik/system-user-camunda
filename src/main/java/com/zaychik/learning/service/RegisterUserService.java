@@ -174,7 +174,6 @@ public class RegisterUserService {
      * Метод для вывода всей информации о работе, которая сейчас выполняется.
      * И с какими параметрами она емеет на вход.
      * @param job - ActivatedJob
-     * @throws  URISyntaxException
      */
     private static void logJob(final ActivatedJob job) {
         log.info(
