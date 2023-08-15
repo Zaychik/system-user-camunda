@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
 
@@ -49,7 +50,7 @@ class ApplicationTest {
 
     private ActivatedJob getActivatedJob(ActivateJobsResponse response) throws Exception {
         await()
-                .atLeast(1, SECONDS)
+                .atLeast(1, MILLISECONDS)
                 .atMost(10, SECONDS)
                 .until(checkActivatedJob(response));
         return response.getJobs().get(0);
@@ -58,7 +59,7 @@ class ApplicationTest {
     private Callable<Boolean> checkActivatedJob(ActivateJobsResponse response) {
         return new Callable<Boolean>() {
             public Boolean call() throws Exception {
-                return response.getJobs().size() < 1;
+                return response.getJobs().size() > 0;
             }
         };
     }
