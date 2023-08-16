@@ -2,5 +2,6 @@ zeebe.client.broker.gateway-address: 127.0.0.1:26500
 
 zeebe.client.security.plaintext: true
 
-rest.request.url: http://localhost:8888
+request.url: http://localhost:8888
+request.timeout: 1000
 
